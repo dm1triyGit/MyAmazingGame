@@ -19,8 +19,4 @@
     <PackageReference Include="Microsoft.Identity.Web" Version="1.16.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="BLL\" />
-  </ItemGroup>
-
 </Project>

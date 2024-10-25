@@ -361,4 +361,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/AmazingGameServer/amazing_game.db
+/AmazingGameServer/amazing_game.*
