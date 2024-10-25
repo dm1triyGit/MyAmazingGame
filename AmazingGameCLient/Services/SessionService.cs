@@ -1,5 +1,5 @@
 ﻿using AmazingGameCLient.Abstractions;
-using AmazingGameCLient.Profile;
+using AmazingGameCLient.Models;
 
 namespace AmazingGameCLient.Services
 {

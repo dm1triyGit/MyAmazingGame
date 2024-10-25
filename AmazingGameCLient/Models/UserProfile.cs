@@ -1,4 +1,4 @@
-﻿namespace AmazingGameCLient.Profile
+﻿namespace AmazingGameCLient.Models
 {
     internal class UserProfile
     {

@@ -2,7 +2,6 @@
 using AmazingGameServer.BLL.Options;
 using AmazingGameServer.DAL.Abstractions;
 using AmazingGameServer.DAL.Dto;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AmazingGameServer.BLL.Services
 {
