@@ -31,7 +31,6 @@ namespace AmazingGameServer.Controllers
             if (profile == null)
             {
                 profile = _gameService.CreateProfile(nickname);
-                //await _gameRepository.CreateProfileAsync(profile);
             }
             else
             {
@@ -48,6 +47,8 @@ namespace AmazingGameServer.Controllers
 
             var token = new JwtSecurityTokenHandler().WriteToken(jwt);
 
+            await _gameService.CreateGame(profile);
+
             return new ProfileResponse { Profile = profile, Token = token };
         }
 
@@ -55,6 +56,7 @@ namespace AmazingGameServer.Controllers
         [HttpGet("logout/{nickname}")]
         public async Task<IActionResult> Logout(string nickname)
         {
+            await _gameService.EndGame(nickname);
             return Ok();
         }
     }

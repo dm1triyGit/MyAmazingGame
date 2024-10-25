@@ -16,6 +16,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseSqlite();
 });
+builder.Host.UseOrleans(static siloBuilder =>
+{
+    siloBuilder.UseLocalhostClustering();
+    siloBuilder.AddMemoryGrainStorage("game");
+});
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
