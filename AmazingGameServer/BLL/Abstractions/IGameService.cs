@@ -10,5 +10,8 @@ namespace AmazingGameServer.BLL.Abstractions
         Task<Profile> GetOrCreateProfileAsync(string nickname);
         Task<BuyItemResponse> BuyItemAsync(int itemId, string nickname);
         Task<SellItemResponse> SellItemAsync(int itemId, string nickname);
+        Task<int> GetCoinsAsync(string nickname);
+        Task<Item[]> GetShopItemsAsync();
+        Task<Item[]> GetProfileItemsAsync(string nickname);
     }
 }

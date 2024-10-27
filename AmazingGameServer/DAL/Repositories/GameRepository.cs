@@ -32,10 +32,18 @@ namespace AmazingGameServer.DAL.Repositories
                 .FirstOrDefaultAsync(x => x.Nickname == nickname);
         }
 
-        public Task<int> UpdateProfile(Profile profile)
+        public async Task<int> UpdateProfile(Profile profile)
         {
-            _context.Profiles.Update(profile);
-            return _context.SaveChangesAsync();
+            var itemIds = profile.Items.Select(x => x.Id).ToArray();
+            var profileToUpdate = _context.Profiles
+                .Include(x => x.Items)
+                .First(x => x.Id == profile.Id);
+            var itemsToUpdate = _context.Items.Where(x => itemIds.Contains(x.Id)).ToList();
+
+            profileToUpdate.Coins = profile.Coins;
+            profileToUpdate.Items = itemsToUpdate;
+
+            return await _context.SaveChangesAsync();
         }
     }
 }

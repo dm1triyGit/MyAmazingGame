@@ -1,23 +1,142 @@
 ﻿using AmazingGameCLient.Abstractions;
+using AmazingGameCLient.Enums;
 using AmazingGameCLient.Models;
+using AmazingGameCLient.Options;
+using GameClient;
+using Grpc.Core;
+using Grpc.Net.Client;
+using Microsoft.Extensions.Configuration;
+using Item = AmazingGameCLient.Models.Item;
 
 namespace AmazingGameCLient.Services
 {
     internal class SessionService : ISessionService
     {
-        public Task<int> GetBalance(int profiletId)
+        private UserProfile _cachedProfile;
+        private Item[] _cachedShopItems;
+
+        private GrpcChannel _channel;
+        private AmazingGame.AmazingGameClient _client;
+
+        private AsyncDuplexStreamingCall<GetCoinsRequest, GetCoinsResponse> _coinsStream;
+        private AsyncDuplexStreamingCall<Empty, GetShopItemsResponse> _shopStream;
+        private AsyncDuplexStreamingCall<GetProfileItemsRequest, GetProfileItemsResponse> _profileItemsStream;
+        private AsyncDuplexStreamingCall<BuyItemRequest, BuyItemResponse> _buyItemStream;
+        private AsyncDuplexStreamingCall<SellItemRequest, SellItemResponse> _sellItemStream;
+
+        private readonly ConnectionOptions _connectionOptions;
+
+        public SessionService(IConfiguration appConfig)
         {
-            throw new NotImplementedException();
+            _connectionOptions = appConfig.GetSection(nameof(ConnectionOptions)).Get<ConnectionOptions>()!;
         }
 
-        public Task<Item[]> GetProfileItems(int profiletId)
+        public async Task<int> GetBalance(string nickname)
         {
-            throw new NotImplementedException();
+            await _coinsStream.RequestStream.WriteAsync(new GetCoinsRequest { Nickname = nickname });
+            await _coinsStream.ResponseStream.MoveNext();
+
+            return _coinsStream.ResponseStream.Current.Coins;
         }
 
-        public Task<Item[]> GetShopItems()
+        public async Task<Item[]> GetProfileItems(string nickname)
         {
-            throw new NotImplementedException();
+            await _profileItemsStream.RequestStream.WriteAsync(new GetProfileItemsRequest { Nickname = nickname });
+
+            await _profileItemsStream.ResponseStream.MoveNext();
+
+            var items = _profileItemsStream.ResponseStream.Current.Items
+                    .Select(x => new Item
+                    {
+                        Id = x.Id,
+                        Name = x.Name,
+                        Price = x.Price
+                    })
+                    .ToArray();
+
+            return items;
+        }
+
+        public async Task<Item[]> GetShopItems()
+        {
+            await _shopStream.RequestStream.WriteAsync(new Empty());
+
+            await _shopStream.ResponseStream.MoveNext();
+            var items = _shopStream.ResponseStream.Current.Items
+                .Select(x => new Item 
+                    { 
+                        Id = x.Id, 
+                        Name = x.Name, 
+                        Price = x.Price 
+                    })
+                .ToArray();
+
+            return items;
+        }
+
+        public void SetCacheProfile(UserProfile profile)
+        {
+            _cachedProfile = profile;
+        }
+
+        public void SetCacheShopItems(Item[] items)
+        {
+            _cachedShopItems = items;
+        }
+
+        public async void StartSession()
+        {
+            _channel = GrpcChannel.ForAddress(_connectionOptions.ServerAddress);
+            _client = new AmazingGame.AmazingGameClient(_channel);
+
+            _coinsStream = _client.GetCoins();
+            _shopStream = _client.GetShopItems();
+            _profileItemsStream = _client.GetProfileItems();
+            _buyItemStream = _client.BuyItem();
+            _sellItemStream = _client.SellItem();
+        }
+
+        public async Task EndSession()
+        {
+            await Task.WhenAll(
+                _coinsStream.RequestStream.CompleteAsync(),
+                _shopStream.RequestStream.CompleteAsync(),
+                _profileItemsStream.RequestStream.CompleteAsync(),
+                _buyItemStream.RequestStream.CompleteAsync(),
+                _sellItemStream.RequestStream.CompleteAsync());
+
+            _coinsStream.Dispose();
+            _shopStream.Dispose();
+            _channel.Dispose();
+        }
+
+        public async Task<bool> BuyItemAsync(int itemId, string nickname)
+        {
+            var request = new BuyItemRequest
+            {
+                ItemId = itemId,
+                Nickname = nickname
+            };
+
+            await _buyItemStream.RequestStream.WriteAsync(request);
+            await _buyItemStream.ResponseStream.MoveNext();
+
+            return _buyItemStream.ResponseStream.Current.IsSuccess;
+        }
+
+        public async Task<bool> SellItemAsync(int itemId, string nickname)
+        {
+            var request = new SellItemRequest
+            {
+                ItemId = itemId,
+                Nickname = nickname
+            };
+
+            await _sellItemStream.RequestStream.WriteAsync(request);
+            await _sellItemStream.ResponseStream.MoveNext();
+
+            return _sellItemStream.ResponseStream.Current.IsSuccess;
+
         }
     }
 }

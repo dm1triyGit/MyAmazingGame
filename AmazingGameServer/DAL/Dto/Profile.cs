@@ -11,6 +11,6 @@
         public int Coins { get; set; }
 
         [Id(3)]
-        public List<Item> Items { get; set; } = new();
+        public List<Item>? Items { get; set; } = new();
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace AmazingGameServer.DAL.Dto
+﻿using System.Text.Json.Serialization;
+
+namespace AmazingGameServer.DAL.Dto
 {
     [GenerateSerializer, Alias(nameof(Item))]
     public class Item
@@ -10,6 +12,7 @@
         [Id(2)]
         public int Price { get; set; }
 
+        [JsonIgnore]
         public List<Profile> Profile { get; set; } = new();
     }
 }

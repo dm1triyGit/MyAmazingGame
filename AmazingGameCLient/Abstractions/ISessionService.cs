@@ -4,8 +4,15 @@ namespace AmazingGameCLient.Abstractions
 {
     internal interface ISessionService
     {
-        Task<int> GetBalance(int profiletId);
+        Task<int> GetBalance(string nickname);
         Task<Item[]> GetShopItems();
-        Task<Item[]> GetProfileItems(int profiletId);
+        Task<Item[]> GetProfileItems(string nickname);
+        void StartSession();
+        Task EndSession();
+        void SetCacheProfile(UserProfile profile);
+        void SetCacheShopItems(Item[] items);
+
+        Task<bool> BuyItemAsync(int itemId, string nickname);
+        Task<bool> SellItemAsync(int itemId, string nickname);
     }
 }

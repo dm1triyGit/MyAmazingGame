@@ -52,7 +52,7 @@ namespace AmazingGameServer.BLL.Grains
             }
 
             _state.Coins += item.Price;
-            _state.ProfileItems.Remove(item);
+            _state.ProfileItems.RemoveAll(x => x.Id == item.Id);
 
             return true;
         }
@@ -91,7 +91,7 @@ namespace AmazingGameServer.BLL.Grains
             {
                 return false;
             }
-            if (_state.ProfileItems.Any(x => x.Id != item.Id))
+            if (!_state.ProfileItems.Any(x => x.Id == item.Id))
             {
                 return false;
             }

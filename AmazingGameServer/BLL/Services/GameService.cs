@@ -82,7 +82,7 @@ namespace AmazingGameServer.BLL.Services
         {
             var profileGrane = _grainFactory.GetGrain<IProfileGrain>(nickname);
 
-            var result = await profileGrane.BuyItem(itemId, nickname);
+            var result = await profileGrane.BuyItem(itemId, SHOP_KEY);
             var profile = await profileGrane.GetProfile();
 
             return new BuyItemResponse
@@ -96,7 +96,7 @@ namespace AmazingGameServer.BLL.Services
         {
             var profileGrane = _grainFactory.GetGrain<IProfileGrain>(nickname);
 
-            var result = await profileGrane.SellItem(itemId, nickname);
+            var result = await profileGrane.SellItem(itemId, SHOP_KEY);
             var profile = await profileGrane.GetProfile();
 
             return new SellItemResponse
@@ -104,6 +104,26 @@ namespace AmazingGameServer.BLL.Services
                 Profile = profile,
                 IsSuccess = result
             };
+        }
+
+        public async Task<int> GetCoinsAsync(string nickname)
+        {
+            var profileGrane = _grainFactory.GetGrain<IProfileGrain>(nickname);
+            var coins = (await profileGrane.GetProfile()).Coins;
+            return coins;
+        }
+
+        public Task<Item[]> GetShopItemsAsync()
+        {
+            var shopGrane = _grainFactory.GetGrain<IShopGrain>(SHOP_KEY);
+            return shopGrane.GetItems();
+        }
+
+        public async Task<Item[]> GetProfileItemsAsync(string nickname)
+        {
+            var profileGrane = _grainFactory.GetGrain<IProfileGrain>(nickname);
+            var items = (await profileGrane.GetProfile()).Items;
+            return items.ToArray();
         }
     }
 }

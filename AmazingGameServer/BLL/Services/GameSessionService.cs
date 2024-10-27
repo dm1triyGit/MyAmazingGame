@@ -55,5 +55,63 @@ namespace AmazingGameServer.BLL.Services
                 await responseStream.WriteAsync(reply);
             }
         }
+
+        public override async Task GetCoins(
+            IAsyncStreamReader<GetCoinsRequest> requestStream,
+            IServerStreamWriter<GetCoinsResponse> responseStream,
+            ServerCallContext context)
+        {
+            while (await requestStream.MoveNext())
+            {
+                var request = requestStream.Current;
+
+                var response = await _gameService.GetCoinsAsync(request.Nickname);
+
+                var reply = new GetCoinsResponse
+                {
+                    Coins = response
+                };
+
+                await responseStream.WriteAsync(reply);
+            }
+        }
+
+        public override async Task GetShopItems(
+            IAsyncStreamReader<Empty> requestStream,
+            IServerStreamWriter<GetShopItemsResponse> responseStream,
+            ServerCallContext context)
+        {
+            while (await requestStream.MoveNext())
+            {
+                var request = requestStream.Current;
+
+                var response = await _gameService.GetShopItemsAsync();
+
+                var reply = new GetShopItemsResponse();
+                var items = response.Select(x => x.MapToResponseItem()).ToArray();
+                reply.Items.AddRange(items);
+
+                await responseStream.WriteAsync(reply);
+            }
+        }
+
+        public override async Task GetProfileItems(
+            IAsyncStreamReader<GetProfileItemsRequest> requestStream,
+            IServerStreamWriter<GetProfileItemsResponse> responseStream,
+            ServerCallContext context)
+        {
+            while (await requestStream.MoveNext())
+            {
+                var request = requestStream.Current;
+
+                var response = await _gameService.GetProfileItemsAsync(request.Nickname);
+
+                var reply = new GetProfileItemsResponse();
+                var items = response.Select(x => x.MapToResponseItem()).ToArray();
+                reply.Items.AddRange(items);
+
+                await responseStream.WriteAsync(reply);
+            }
+        }
     }
 }
