@@ -35,6 +35,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true
         };
     });
+builder.Services.AddGrpc();
+
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 
@@ -56,5 +58,6 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.MapControllers();
+app.MapGrpcService<GameSessionService>();
 
 app.Run();

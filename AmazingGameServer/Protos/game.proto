@@ -1,0 +1,43 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "GameServer";
+
+package game;
+
+service AmazingGame {
+  rpc BuyItem (stream BuyItemRequest) returns (stream BuyItemResponse);
+  rpc SellItem (stream SellItemRequest) returns (stream SellItemResponse);
+}
+
+message Item {
+  int32 id = 1;
+  string name = 2;
+  int32 price = 3;
+}
+
+message Profile {
+  int32 id = 1;
+  string nickname = 2;
+  int32 coins = 3;
+  repeated Item items = 4;
+}
+
+message BuyItemRequest {
+  int32 itemId = 1;
+  string nickname = 2;
+}
+ 
+message BuyItemResponse {
+  Profile profile = 1;
+  bool isSuccess = 2;
+}
+
+message SellItemRequest {
+  int32 itemId = 1;
+  string nickname = 2;
+}
+ 
+message SellItemResponse {
+  Profile profile = 1;
+  bool isSuccess = 2;
+}

@@ -1,12 +1,14 @@
-﻿using AmazingGameServer.DAL.Dto;
+﻿using AmazingGameServer.BLL.Responses;
+using AmazingGameServer.DAL.Dto;
 
 namespace AmazingGameServer.BLL.Abstractions
 {
     public interface IGameService
     {
-        Profile CreateProfile(string nickname);
-        int GetPay();
-        Task CreateGame(Profile profile);
-        Task EndGame(string nickname);
+        Task CreateGameAsync(Profile profile);
+        Task EndGameAsync(string nickname);
+        Task<Profile> GetOrCreateProfileAsync(string nickname);
+        Task<BuyItemResponse> BuyItemAsync(int itemId, string nickname);
+        Task<SellItemResponse> SellItemAsync(int itemId, string nickname);
     }
 }

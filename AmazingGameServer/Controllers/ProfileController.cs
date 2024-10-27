@@ -1,7 +1,6 @@
 ﻿using AmazingGameServer.BLL.Abstractions;
 using AmazingGameServer.BLL.Options;
 using AmazingGameServer.BLL.Responses;
-using AmazingGameServer.DAL.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -14,40 +13,20 @@ namespace AmazingGameServer.Controllers
     [Route("api/[controller]")]
     public class ProfileController : ControllerBase
     {
-        private readonly IGameRepository _gameRepository;
         private readonly IGameService _gameService;
 
-        public ProfileController(IGameRepository gameRepository, IGameService gameService)
+        public ProfileController(IGameService gameService)
         {
-            _gameRepository = gameRepository;
             _gameService = gameService;
         }
 
         [HttpGet("login/{nickname}")]
         public async Task<ProfileResponse> Login(string nickname)
         {
-            var profile = await _gameRepository.GetProfileAsync(nickname);
+            var profile = await _gameService.GetOrCreateProfileAsync(nickname);
+            var token = GetToken(nickname);
 
-            if (profile == null)
-            {
-                profile = _gameService.CreateProfile(nickname);
-            }
-            else
-            {
-                profile.Coins += _gameService.GetPay();
-            }
-
-            var claims = new List<Claim> { new Claim(ClaimTypes.Name, nickname) };
-            var jwt = new JwtSecurityToken(
-                issuer: AuthOptions.ISSUER,
-                audience: AuthOptions.AUDIENCE,
-                claims: claims,
-                expires: DateTime.UtcNow.Add(TimeSpan.FromMinutes(2)),
-                signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
-
-            var token = new JwtSecurityTokenHandler().WriteToken(jwt);
-
-            await _gameService.CreateGame(profile);
+            await _gameService.CreateGameAsync(profile);
 
             return new ProfileResponse { Profile = profile, Token = token };
         }
@@ -56,8 +35,21 @@ namespace AmazingGameServer.Controllers
         [HttpGet("logout/{nickname}")]
         public async Task<IActionResult> Logout(string nickname)
         {
-            await _gameService.EndGame(nickname);
+            await _gameService.EndGameAsync(nickname);
             return Ok();
+        }
+
+        private string GetToken(string nickname)
+        {
+            var claims = new List<Claim> { new Claim(ClaimTypes.Name, nickname) };
+            var jwt = new JwtSecurityToken(
+                issuer: AuthOptions.ISSUER,
+                audience: AuthOptions.AUDIENCE,
+                claims: claims,
+                expires: DateTime.UtcNow.Add(TimeSpan.FromDays(1)),
+                signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
+
+            return new JwtSecurityTokenHandler().WriteToken(jwt);
         }
     }
 }

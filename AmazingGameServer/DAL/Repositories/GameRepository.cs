@@ -27,7 +27,9 @@ namespace AmazingGameServer.DAL.Repositories
 
         public Task<Profile?> GetProfileAsync(string nickname)
         {
-            return _context.Profiles.FirstOrDefaultAsync(x => x.Nickname == nickname);
+            return _context.Profiles
+                .Include(x => x.Items)
+                .FirstOrDefaultAsync(x => x.Nickname == nickname);
         }
 
         public Task<int> UpdateProfile(Profile profile)
