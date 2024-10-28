@@ -62,7 +62,7 @@ namespace AmazingGameCLient.Services
                 return true;
             }
 
-            _sessionService.StartSession();
+            _sessionService.StartSession(response.Token);
             _clientState = ClientStates.GameSession;
             return false;
         }

@@ -7,7 +7,7 @@ namespace AmazingGameCLient.Abstractions
         Task<int> GetBalance(string nickname);
         Task<Item[]> GetShopItems();
         Task<Item[]> GetProfileItems(string nickname);
-        void StartSession();
+        void StartSession(string token);
         Task EndSession();
         void SetCacheProfile(UserProfile profile);
         void SetCacheShopItems(Item[] items);

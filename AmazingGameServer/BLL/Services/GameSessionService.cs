@@ -2,9 +2,11 @@
 using AmazingGameServer.BLL.Mappers;
 using GameServer;
 using Grpc.Core;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AmazingGameServer.BLL.Services
 {
+    [Authorize]
     public class GameSessionService: AmazingGame.AmazingGameBase
     {
         private readonly IGameService _gameService;

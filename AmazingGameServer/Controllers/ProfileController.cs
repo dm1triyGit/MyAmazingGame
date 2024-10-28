@@ -31,7 +31,7 @@ namespace AmazingGameServer.Controllers
             return new ProfileResponse { Profile = profile, Token = token };
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpGet("logout/{nickname}")]
         public async Task<IActionResult> Logout(string nickname)
         {

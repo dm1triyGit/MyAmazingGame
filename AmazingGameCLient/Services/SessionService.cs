@@ -1,5 +1,4 @@
 ﻿using AmazingGameCLient.Abstractions;
-using AmazingGameCLient.Enums;
 using AmazingGameCLient.Models;
 using AmazingGameCLient.Options;
 using GameClient;
@@ -84,9 +83,18 @@ namespace AmazingGameCLient.Services
             _cachedShopItems = items;
         }
 
-        public async void StartSession()
+        public async void StartSession(string token)
         {
-            _channel = GrpcChannel.ForAddress(_connectionOptions.ServerAddress);
+            var credentials = CallCredentials.FromInterceptor(async (context, metadata) =>
+            {
+                metadata.Add("Authorization", $"Bearer {token}");
+            });
+
+            _channel = GrpcChannel.ForAddress(_connectionOptions.ServerAddress, new GrpcChannelOptions
+            {
+                Credentials = ChannelCredentials.Create(new SslCredentials(), credentials)
+            });
+
             _client = new AmazingGame.AmazingGameClient(_channel);
 
             _coinsStream = _client.GetCoins();
