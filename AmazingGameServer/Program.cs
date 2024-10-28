@@ -8,10 +8,13 @@ using AmazingGameServer.DAL.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Configuration.AddJsonFile("appsettings.json");
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseSqlite();
@@ -21,17 +24,20 @@ builder.Host.UseOrleans(static siloBuilder =>
     siloBuilder.UseLocalhostClustering();
     siloBuilder.AddMemoryGrainStorage("game");
 });
+
+var authOptions = builder.Configuration.GetSection(nameof(AuthOptions)).Get<AuthOptions>()!;
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = AuthOptions.ISSUER,
+            ValidIssuer = authOptions.Issuer,
             ValidateAudience = true,
-            ValidAudience = AuthOptions.AUDIENCE,
+            ValidAudience = authOptions.Audience,
             ValidateLifetime = true,
-            IssuerSigningKey = AuthOptions.GetSymmetricSecurityKey(),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authOptions.Key)),
             ValidateIssuerSigningKey = true
         };
     });
@@ -43,8 +49,6 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<AppDbContextInitialiser>();
 builder.Services.AddScoped<IGameRepository, GameRepository>();
 builder.Services.AddScoped<IGameService, GameService>();
-
-builder.Configuration.AddJsonFile("appsettings.json");
 
 var app = builder.Build();
 app.UseAuthentication();

@@ -1,6 +1,7 @@
 ﻿using AmazingGameCLient.Abstractions;
 using AmazingGameCLient.Enums;
 using AmazingGameCLient.Models;
+using AmazingGameCLient.Responses;
 
 namespace AmazingGameCLient.Services
 {
@@ -8,17 +9,16 @@ namespace AmazingGameCLient.Services
     {
         private ClientStates _clientState;
         private UserProfile? _userProfile;
+        private Item[]? _shopItems;
 
         private readonly ILoginService _loginService;
         private readonly ISessionService _sessionService;
-        private readonly IShopValidatorService _shopValidatorService;
 
-        public UIService(ILoginService loginService, ISessionService sessionService, IShopValidatorService shopValidatorService)
+        public UIService(ILoginService loginService, ISessionService sessionService)
         {
             _clientState = ClientStates.Login;
             _loginService = loginService;
             _sessionService = sessionService;
-            _shopValidatorService = shopValidatorService;
         }
 
         public async Task StartDialogAsync()
@@ -75,11 +75,12 @@ namespace AmazingGameCLient.Services
             }
             else
             {
-                await Task.Delay(500);
+                Console.WriteLine();
                 Console.WriteLine($"{(int)SessionOptions.Money}) Монеты");
                 Console.WriteLine($"{(int)SessionOptions.Shop}) Магазин");
                 Console.WriteLine($"{(int)SessionOptions.Items}) Инвентарь");
                 Console.WriteLine($"{(int)SessionOptions.Exit}) Выйти из профиля");
+                Console.WriteLine();
             }
 
             var line = Console.ReadLine();
@@ -88,7 +89,7 @@ namespace AmazingGameCLient.Services
                 switch ((SessionOptions)input)
                 {
                     case SessionOptions.Money:
-                        var balance = await _sessionService.GetBalance(_userProfile!.Nickname);
+                        var balance = _userProfile.Coins;
                         Console.WriteLine($"Количество монет: {balance}");
                         break;
 
@@ -97,7 +98,7 @@ namespace AmazingGameCLient.Services
                         break;
 
                     case SessionOptions.Items:
-                        var profileItems = await _sessionService.GetProfileItems(_userProfile!.Nickname);
+                        var profileItems = _userProfile.Items;
 
                         if (profileItems == null || profileItems.Length == 0)
                         {
@@ -105,18 +106,17 @@ namespace AmazingGameCLient.Services
                             break;
                         }
 
-                        Console.WriteLine("Предметы в инвентаре:");
+                        Console.WriteLine();
+                        Console.WriteLine("Предметы в инвентаре:\n");
                         foreach (var item in profileItems)
                         {
                             Console.WriteLine(item.Name);
                         }
+                        Console.WriteLine();
                         break;
 
                     case SessionOptions.Exit:
-                        await _loginService.Logout(_userProfile.Nickname);
-                        await _sessionService.EndSession();
-                        _userProfile = null;
-                        _clientState = ClientStates.Login;
+                        await EndGame();
                         break;
 
                     default:
@@ -129,27 +129,39 @@ namespace AmazingGameCLient.Services
             return true;
         }
 
+        private async Task EndGame()
+        {
+            await _loginService.Logout(_userProfile.Nickname);
+            await _sessionService.EndSession();
+            _userProfile = null;
+            _clientState = ClientStates.Login;
+        }
+
         private async Task ShopDialogAsync()
         {
-            var shopItems = await _sessionService.GetShopItems();
+            _shopItems ??= await _sessionService.GetShopItems();
 
-            if (shopItems == null)
+
+            if (_shopItems == null)
             {
                 Console.WriteLine("Произошла ошибка. Попробуйте снова");
                 return;
             }
 
+            Console.WriteLine();
             Console.WriteLine("Предметы магазина:");
             var counter = 1;
 
-            foreach (var item in shopItems)
+            foreach (var item in _shopItems)
             {
                 Console.WriteLine($"{counter}) Название - {item.Name} | Стоимость - {item.Price}");
                 counter++;
             }
-
-            Console.WriteLine("Введите номер предмета для покупки или продажи");
             Console.WriteLine("0) Выход");
+
+            Console.WriteLine();
+            Console.WriteLine("Введите номер предмета для покупки или продажи");
+            Console.WriteLine();
 
             var line = Console.ReadLine();
 
@@ -159,10 +171,13 @@ namespace AmazingGameCLient.Services
             }
 
             Item selectedItem = null;
-            if (int.TryParse(line, out int itemNumber) && itemNumber <= shopItems.Length && itemNumber > 0)
+
+            if (int.TryParse(line, out int itemNumber) 
+                && itemNumber <= _shopItems.Length 
+                && itemNumber > 0)
             {
                 var index = itemNumber - 1;
-                selectedItem = shopItems[index];
+                selectedItem = _shopItems[index];
             }
 
             if (selectedItem == null)
@@ -176,9 +191,11 @@ namespace AmazingGameCLient.Services
 
         private async Task ShopOptionsDialogAsync(Item selectedItem)
         {
+            Console.WriteLine();
             Console.WriteLine($"{(int)ShopOptions.Buy}) Покупка");
             Console.WriteLine($"{(int)ShopOptions.Sell}) Продажа");
             Console.WriteLine($"{(int)ShopOptions.Cancel}) Отмена");
+            Console.WriteLine();
 
             var shopOptionsline = Console.ReadLine();
             if (int.TryParse(shopOptionsline, out int input))
@@ -186,37 +203,41 @@ namespace AmazingGameCLient.Services
                 switch ((ShopOptions)input)
                 {
                     case ShopOptions.Buy:
-                        var isValidBuy = true; //_shopValidatorService.ValidateBuy(selectedItem, _userProfile!);
-                        if(!isValidBuy)
+                        var isValidBuy = ValidateBuy(selectedItem);
+                        if (!isValidBuy)
                         {
-                            Console.WriteLine("Недостаточно денег, либо предмет уже есть");
+                            Console.WriteLine("\nНедостаточно денег, либо предмет уже есть");
                             return;
                         }
-                        var isSuccessBuy = await _sessionService.BuyItemAsync(selectedItem.Id, _userProfile!.Nickname);
+                        var buyResponse = await _sessionService.BuyItemAsync(selectedItem.Id, _userProfile!.Nickname);
 
-                        if(!isSuccessBuy)
+                        if (!buyResponse.IsSuccess)
                         {
                             Console.WriteLine("Произошла ошибка при покупке");
                             return;
                         }
-                        Console.WriteLine($"Вы успешно приобрели - {selectedItem.Name}");
+                        UpdateProfile(buyResponse);
+                        Console.WriteLine($"\nВы успешно приобрели - {selectedItem.Name}\n");
                         break;
+
                     case ShopOptions.Sell:
-                        var isValidSell = true; //_shopValidatorService.ValidateSell(selectedItem, _userProfile!);
+                        var isValidSell = ValidateSell(selectedItem);
                         if (!isValidSell)
                         {
-                            Console.WriteLine("У вас нет предмета");
+                            Console.WriteLine("\nУ вас нет предмета");
                             return;
                         }
 
-                        var isSuccessSell = await _sessionService.SellItemAsync(selectedItem.Id, _userProfile!.Nickname);
-                        if (!isSuccessSell)
+                        var sellResponse = await _sessionService.SellItemAsync(selectedItem.Id, _userProfile!.Nickname);
+                        if (!sellResponse.IsSuccess)
                         {
                             Console.WriteLine("Произошла ошибка при продаже");
                             return;
                         }
-                        Console.WriteLine($"Вы успешно продали - {selectedItem.Name}");
+                        UpdateProfile(sellResponse);
+                        Console.WriteLine($"\nВы успешно продали - {selectedItem.Name}\n");
                         break;
+
                     case ShopOptions.Cancel:
                         return;
                     default:
@@ -224,6 +245,44 @@ namespace AmazingGameCLient.Services
                         return;
                 }
             }
+        }
+
+        private bool ValidateBuy(Item? item)
+        {
+            if (item == null)
+            {
+                return false;
+            }
+            if (_userProfile.Coins < item.Price)
+            {
+                return false;
+            }
+            if (_userProfile.Items.Any(x => x.Id == item.Id))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool ValidateSell(Item? item)
+        {
+            if (item == null)
+            {
+                return false;
+            }
+            if (!_userProfile.Items.Any(x => x.Id == item.Id))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private void UpdateProfile(BaseItemsResponse response)
+        {
+            _userProfile.Coins = response.Coins;
+            _userProfile.Items = response.Items;
         }
     }
 }

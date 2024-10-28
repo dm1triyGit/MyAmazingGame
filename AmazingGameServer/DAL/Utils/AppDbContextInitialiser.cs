@@ -50,18 +50,23 @@ namespace AmazingGameServer.DAL.Utils
             {
                 var items = new List<Item>()
                 {
-                    new Item { Name = "Test1", Price = 1 },
-                    new Item { Name = "Test2", Price = 2 },
-                    new Item { Name = "Test3", Price = 3 },
-                    new Item { Name = "Test4", Price = 4 }
+                    new Item { Name = "Меч", Price = 30 },
+                    new Item { Name = "Шлем", Price = 30 },
+                    new Item { Name = "Кираса", Price = 60 },
+                    new Item { Name = "Перчи", Price = 25 },
+                    new Item { Name = "Поножи", Price = 55 },
+                    new Item { Name = "Сапоги", Price = 20 },
+                    new Item { Name = "Щит", Price = 40 },
+                    new Item { Name = "Крутой меч", Price = 120 },
+                    new Item { Name = "Крутая кираса", Price = 160 },
+                    new Item { Name = "Крутые перчи", Price = 125 },
+                    new Item { Name = "Крутые поножи", Price = 155 },
+                    new Item { Name = "Крутые сапоги", Price = 120 },
                 };
-
 
                 _context.Items.AddRange(items);
                 await _context.SaveChangesAsync();
             }
-
-
         }
     }
 }

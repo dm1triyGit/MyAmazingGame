@@ -1,6 +1,7 @@
 ﻿using AmazingGameCLient.Abstractions;
 using AmazingGameCLient.Models;
 using AmazingGameCLient.Options;
+using AmazingGameCLient.Responses;
 using GameClient;
 using Grpc.Core;
 using Grpc.Net.Client;
@@ -118,7 +119,7 @@ namespace AmazingGameCLient.Services
             _channel.Dispose();
         }
 
-        public async Task<bool> BuyItemAsync(int itemId, string nickname)
+        public async Task<BaseItemsResponse> BuyItemAsync(int itemId, string nickname)
         {
             var request = new BuyItemRequest
             {
@@ -129,10 +130,11 @@ namespace AmazingGameCLient.Services
             await _buyItemStream.RequestStream.WriteAsync(request);
             await _buyItemStream.ResponseStream.MoveNext();
 
-            return _buyItemStream.ResponseStream.Current.IsSuccess;
+            var response = MapToBuyItemsResponse(_buyItemStream.ResponseStream.Current);
+            return response;
         }
 
-        public async Task<bool> SellItemAsync(int itemId, string nickname)
+        public async Task<BaseItemsResponse> SellItemAsync(int itemId, string nickname)
         {
             var request = new SellItemRequest
             {
@@ -143,8 +145,42 @@ namespace AmazingGameCLient.Services
             await _sellItemStream.RequestStream.WriteAsync(request);
             await _sellItemStream.ResponseStream.MoveNext();
 
-            return _sellItemStream.ResponseStream.Current.IsSuccess;
+            var response = MapToSellItemsResponse(_sellItemStream.ResponseStream.Current);
+            return response;
 
+        }
+
+        private static BaseItemsResponse MapToBuyItemsResponse(BuyItemResponse response)
+        {
+            return new BaseItemsResponse
+            {
+                Coins = response.Profile.Coins,
+                Items = response.Profile.Items
+                    .Select(x => new Item 
+                        {   Id = x.Id, 
+                            Name = x.Name, 
+                            Price = x.Price 
+                        })
+                    .ToArray(),
+                IsSuccess = response.IsSuccess
+            };
+        }
+
+        private static BaseItemsResponse MapToSellItemsResponse(SellItemResponse response)
+        {
+            return new BaseItemsResponse
+            {
+                Coins = response.Profile.Coins,
+                Items = response.Profile.Items
+                    .Select(x => new Item
+                    {
+                        Id = x.Id,
+                        Name = x.Name,
+                        Price = x.Price
+                    })
+                    .ToArray(),
+                IsSuccess = response.IsSuccess
+            };
         }
     }
 }

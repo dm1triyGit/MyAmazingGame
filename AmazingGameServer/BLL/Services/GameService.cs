@@ -31,29 +31,6 @@ namespace AmazingGameServer.BLL.Services
             await profileGrane.SetProfile(profile);
         }
 
-        private Profile CreateProfile(string nickname)
-        {
-            var profile = new Profile
-            {
-                Nickname = nickname,
-                Coins = _profileOptions.StartCoins
-            };
-
-            _gameRepository.CreateProfileAsync(profile);
-
-            return profile;
-        }
-
-        private int GetPay()
-        {
-            var min = _profileOptions.LowerCoinsRange;
-            var max = _profileOptions.UpperCointRange;
-
-            var randomPay = new Random().Next(min, max);
-
-            return randomPay;
-        }
-
         public async Task EndGameAsync(string nickname)
         {
             var profileGrane = _grainFactory.GetGrain<IProfileGrain>(nickname);
@@ -124,6 +101,29 @@ namespace AmazingGameServer.BLL.Services
             var profileGrane = _grainFactory.GetGrain<IProfileGrain>(nickname);
             var items = (await profileGrane.GetProfile()).Items;
             return items.ToArray();
+        }
+
+        private Profile CreateProfile(string nickname)
+        {
+            var profile = new Profile
+            {
+                Nickname = nickname,
+                Coins = _profileOptions.StartCoins
+            };
+
+            _gameRepository.CreateProfileAsync(profile);
+
+            return profile;
+        }
+
+        private int GetPay()
+        {
+            var min = _profileOptions.LowerCoinsRange;
+            var max = _profileOptions.UpperCointRange;
+
+            var randomPay = new Random().Next(min, max);
+
+            return randomPay;
         }
     }
 }

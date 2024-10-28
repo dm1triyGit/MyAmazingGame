@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 
 namespace AmazingGameServer.Controllers
 {
@@ -14,10 +15,12 @@ namespace AmazingGameServer.Controllers
     public class ProfileController : ControllerBase
     {
         private readonly IGameService _gameService;
+        private readonly AuthOptions _authOptions;
 
-        public ProfileController(IGameService gameService)
+        public ProfileController(IGameService gameService, IConfiguration appConfig)
         {
             _gameService = gameService;
+            _authOptions = appConfig.GetSection(nameof(AuthOptions)).Get<AuthOptions>()!;
         }
 
         [HttpGet("login/{nickname}")]
@@ -43,11 +46,13 @@ namespace AmazingGameServer.Controllers
         {
             var claims = new List<Claim> { new Claim(ClaimTypes.Name, nickname) };
             var jwt = new JwtSecurityToken(
-                issuer: AuthOptions.ISSUER,
-                audience: AuthOptions.AUDIENCE,
+                issuer: _authOptions.Issuer,
+                audience: _authOptions.Audience,
                 claims: claims,
                 expires: DateTime.UtcNow.Add(TimeSpan.FromDays(1)),
-                signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
+                signingCredentials: new SigningCredentials(
+                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_authOptions.Key)),
+                    SecurityAlgorithms.HmacSha256));
 
             return new JwtSecurityTokenHandler().WriteToken(jwt);
         }

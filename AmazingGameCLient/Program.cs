@@ -10,8 +10,7 @@ IConfiguration config = configBuilder.Build();
 
 LoginService loginService = new(config);
 SessionService sessionService = new(config);
-ShopValidatorService shopValidatorService = new();
 
-var uiService = new UIService(loginService, sessionService, shopValidatorService);
+var uiService = new UIService(loginService, sessionService);
 
 await uiService.StartDialogAsync();

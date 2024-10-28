@@ -1,4 +1,5 @@
 ﻿using AmazingGameCLient.Models;
+using AmazingGameCLient.Responses;
 
 namespace AmazingGameCLient.Abstractions
 {
@@ -11,8 +12,7 @@ namespace AmazingGameCLient.Abstractions
         Task EndSession();
         void SetCacheProfile(UserProfile profile);
         void SetCacheShopItems(Item[] items);
-
-        Task<bool> BuyItemAsync(int itemId, string nickname);
-        Task<bool> SellItemAsync(int itemId, string nickname);
+        Task<BaseItemsResponse> BuyItemAsync(int itemId, string nickname);
+        Task<BaseItemsResponse> SellItemAsync(int itemId, string nickname);
     }
 }
